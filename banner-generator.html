@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banner Generator</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/dancing-script@5.0.19/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.20/300.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.20/300-italic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.20/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.20/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.20/700.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  background: #f0f0f0;
+  color: #1a1a1a;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar ──────────────────────────────────────────────────────────── */
+.top-bar {
+  height: 44px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.top-bar h1 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+.top-bar p {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+}
+.top-bar .dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+}
+
+/* ── App shell ────────────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Form panel ──────────────────────────────────────────────────────── */
+.fp {
+  width: 304px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.fp-bd {
+  padding: 12px 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+.fp-ft {
+  padding: 10px 16px 14px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+}
+
+/* ── Section headers ─────────────────────────────────────────────────── */
+.sec {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #aaa;
+  padding: 11px 0 7px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sec:first-child { padding-top: 0; border-top: none; margin-top: 0; }
+
+/* ── Fields ──────────────────────────────────────────────────────────── */
+.fld { margin-bottom: 8px; }
+.fld label { display: block; font-size: 10px; color: #666; margin-bottom: 3px; }
+.fld a { font-size: 9px; color: #1a73e8; text-decoration: none; }
+.fld a:hover { text-decoration: underline; }
+input[type=text], input[type=password], select {
+  width: 100%;
+  font-size: 12px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.14);
+  border-radius: 6px;
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color 0.12s;
+  appearance: auto;
+}
+input[type=text]:focus, input[type=password]:focus, select:focus {
+  border-color: rgba(0,0,0,0.35);
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.tab {
+  flex: 1; padding: 5px 2px;
+  font-size: 9px; font-weight: 600; text-align: center;
+  border: 1px solid rgba(0,0,0,0.14); border-radius: 6px;
+  cursor: pointer; background: transparent; color: #666;
+  font-family: inherit; transition: all .12s;
+}
+.tab:hover { background: #f7f7f7; }
+.tab.on { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+/* ── Colour ──────────────────────────────────────────────────────────── */
+.presets { display: flex; gap: 5px; margin-bottom: 7px; flex-wrap: wrap; }
+.sw {
+  width: 20px; height: 20px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: transform .12s, border-color .12s; flex-shrink: 0;
+}
+.sw:hover { transform: scale(1.18); }
+.sw.on { border-color: #1a1a1a; }
+.color-pick {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(0,0,0,0.14); border-radius: 6px;
+  padding: 6px 10px; cursor: pointer;
+  transition: background .12s; position: relative;
+}
+.color-pick:hover { background: #f7f7f7; }
+.color-dot { width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.1); }
+.color-pick-lbl { font-size: 11px; color: #666; }
+.color-pick-hex { font-size: 10px; color: #aaa; font-family: monospace; margin-left: auto; }
+.color-pick input[type=color] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; padding: 0; }
+
+/* ── Effects ─────────────────────────────────────────────────────────── */
+.fx-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.fx-pill {
+  padding: 4px 9px; font-size: 9px; font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.14); border-radius: 20px;
+  cursor: pointer; background: transparent; color: #666;
+  font-family: inherit; transition: all .12s; white-space: nowrap;
+}
+.fx-pill:hover { background: #f7f7f7; }
+.fx-pill.on { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+/* ── Sliders ─────────────────────────────────────────────────────────── */
+.sz-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.sz-row label { font-size: 10px; color: #666; width: 60px; flex-shrink: 0; }
+.sz-row input[type=range] { flex: 1; cursor: pointer; accent-color: #1a1a1a; }
+.sz-val { font-size: 10px; color: #666; width: 30px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+/* ── Field label row with px box ────────────────────────────────────── */
+.fld-lrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.fld-lrow label { margin-bottom: 0; }
+.px-box {
+  width: 52px !important;
+  font-size: 11px !important;
+  font-family: monospace !important;
+  text-align: center !important;
+  padding: 2px 6px !important;
+  border: 1px solid rgba(0,0,0,0.14) !important;
+  border-radius: 4px !important;
+  color: #1a1a1a !important;
+  background: #f7f7f7 !important;
+  flex-shrink: 0;
+}
+.px-box:focus { border-color: rgba(0,0,0,0.4) !important; background: #fff !important; outline: none; }
+.type-note { font-size: 9px; color: #aaa; margin-bottom: 6px; }
+
+/* ── Compass ─────────────────────────────────────────────────────────── */
+.compass-wrap { margin-bottom: 8px; }
+.compass-lbl { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
+.compass { display: grid; grid-template-columns: repeat(3,26px); grid-template-rows: repeat(3,26px); gap: 2px; }
+.drbtn {
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; border: 1px solid rgba(0,0,0,0.14); border-radius: 4px;
+  cursor: pointer; background: transparent; color: #666;
+  transition: all .12s; font-family: inherit;
+}
+.drbtn:hover { background: #f7f7f7; }
+.drbtn.on { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.drbtn.mid { background: #f7f7f7; color: #bbb; cursor: default; font-size: 8px; }
+
+/* ── API key ─────────────────────────────────────────────────────────── */
+.key-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+.key-row input { flex: 1; font-size: 11px !important; font-family: monospace !important; }
+.key-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #ddd; }
+.key-dot.ok { background: #2ecc71; }
+.key-dot.err { background: #e74c3c; }
+.ai-badge { display:inline-flex;align-items:center;font-size:8px;background:#e8f0fe;color:#1a73e8;padding:1px 5px;border-radius:4px;font-weight:600; }
+.ai-model { font-size: 9px; color: #aaa; margin-bottom: 6px; }
+.ai-model span { background: #f7f7f7; padding: 2px 5px; border-radius: 4px; font-weight: 500; color: #666; }
+.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 4px; }
+.ai-btn {
+  padding: 7px 4px; font-size: 10px; font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.14); border-radius: 6px;
+  cursor: pointer; background: #f7f7f7; color: #1a1a1a;
+  font-family: inherit; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.ai-btn:hover:not(:disabled) { background: #fff; border-color: rgba(0,0,0,0.3); }
+.ai-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ai-note { font-size: 9px; color: #aaa; margin-bottom: 6px; line-height: 1.5; }
+
+/* ── Upload ──────────────────────────────────────────────────────────── */
+.upl {
+  border: 1px dashed rgba(0,0,0,0.18); border-radius: 6px;
+  height: 56px; position: relative; overflow: hidden;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; margin-bottom: 7px; transition: background .12s;
+}
+.upl:hover { background: #f7f7f7; border-color: rgba(0,0,0,0.3); }
+.upl input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upl-h { font-size: 10px; color: #aaa; text-align: center; pointer-events: none; line-height: 1.6; }
+.upl-h b { display: block; font-weight: 500; color: #666; font-size: 11px; }
+.upl img.th { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+.upl .clr {
+  position: absolute; top: 3px; right: 3px;
+  background: rgba(0,0,0,0.55); color: #fff; border: none;
+  border-radius: 50%; width: 15px; height: 15px; font-size: 8px;
+  cursor: pointer; display: none; align-items: center; justify-content: center;
+  z-index: 4; font-family: inherit;
+}
+.upl.has img.th { display: block; }
+.upl.has .upl-h { display: none; }
+.upl.has .clr { display: flex; }
+
+@keyframes bgn-spin { to { transform: rotate(360deg); } }
+@keyframes bgn-fade { 0%,100%{opacity:.5} 50%{opacity:1} }
+.upl-load {
+  position: absolute; inset: 0; background: #fff;
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 5px; z-index: 3; border-radius: 6px;
+}
+.upl.loading .upl-load { display: flex; }
+.upl.loading input, .upl.loading .clr { pointer-events: none; }
+.spinner { width: 14px; height: 14px; border: 1.5px solid #ddd; border-top-color: #1a1a1a; border-radius: 50%; animation: bgn-spin .7s linear infinite; }
+.upl-load p { font-size: 9px; color: #666; animation: bgn-fade 1.4s ease-in-out infinite; }
+.upl .ai-tag { position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.6); color: #fff; font-size: 8px; padding: 1px 5px; border-radius: 3px; display: none; z-index: 4; pointer-events: none; }
+.upl.ai-gen .ai-tag { display: block; }
+
+/* ── Download button ─────────────────────────────────────────────────── */
+.dl {
+  width: 100%; padding: 10px; font-size: 12px; font-weight: 600;
+  font-family: inherit; background: #1a1a1a; color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  letter-spacing: 0.3px; transition: opacity .15s;
+}
+.dl:hover { opacity: .84; }
+.dl:active { transform: scale(.98); }
+
+/* ── Preview panel ───────────────────────────────────────────────────── */
+.pp { flex: 1; padding: 20px; background: #efefef; overflow-y: auto; min-width: 0; }
+.pl {
+  font-size: 9px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.2px; color: #888; margin-bottom: 6px;
+  display: flex; gap: 7px; align-items: center;
+}
+.pl em { font-style: normal; font-weight: 400; color: #aaa; letter-spacing: 0; text-transform: none; font-size: 9px; }
+.pw {
+  border-radius: 6px; overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.13); margin-bottom: 20px;
+  background: #ddd; line-height: 0; min-height: 40px;
+}
+.pw img { display: block; width: 100%; height: auto; }
+.pr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Banner Generator</h1>
+  <div class="dot"></div>
+  <p>Wood N' Beyond &amp; Vinyl Flooring Direct</p>
+  <div class="dot"></div>
+  <p>Nano Banana Pro · 6 JPGs · ZIP export</p>
+</div>
+
+<div class="app">
+
+  <!-- ── Form panel ──────────────────────────────────────────────────── -->
+  <div class="fp">
+    <div class="fp-bd">
+
+      <div class="sec">Campaign</div>
+      <div class="fld">
+        <label>Campaign name (used for filenames)</label>
+        <input type="text" id="bgn-cn" placeholder="e.g. easter-sale-2026" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <label>Site</label>
+        <div class="tabs">
+          <button class="tab on" onclick="bgnSetSite('wnb',this)">Wood N' Beyond</button>
+          <button class="tab" onclick="bgnSetSite('vfd',this)">Vinyl Flooring</button>
+          <button class="tab" onclick="bgnSetSite('both',this)">Both</button>
+        </div>
+      </div>
+
+      <div class="sec">Panel colour</div>
+      <div class="fld">
+        <label>Presets</label>
+        <div class="presets" id="bgn-sw"></div>
+      </div>
+      <div class="fld">
+        <label>Custom colour</label>
+        <div class="color-pick">
+          <div class="color-dot" id="bgn-cdot"></div>
+          <span class="color-pick-lbl">Click to pick</span>
+          <span class="color-pick-hex" id="bgn-chex">#6B2D2D</span>
+          <input type="color" id="bgn-cpinp" value="#6B2D2D" oninput="bgnSetCol(this.value,true)">
+        </div>
+      </div>
+
+      <div class="sec">Panel effects</div>
+      <div class="fld">
+        <label>Shadow style</label>
+        <div class="fx-pills">
+          <button class="fx-pill on"  onclick="bgnSetFx('none',this)">None</button>
+          <button class="fx-pill" onclick="bgnSetFx('float',this)">🪄 Float</button>
+          <button class="fx-pill" onclick="bgnSetFx('lift',this)">💡 Directional</button>
+          <button class="fx-pill" onclick="bgnSetFx('glow',this)">✨ Glow</button>
+          <button class="fx-pill" onclick="bgnSetFx('soft3d',this)">⬛ Soft 3D</button>
+          <button class="fx-pill" onclick="bgnSetFx('inset',this)">🔲 Inset</button>
+        </div>
+      </div>
+      <div class="sz-row" id="bgn-fxIntRow" style="display:none">
+        <label>Intensity</label>
+        <input type="range" id="bgn-fxInt" min="10" max="100" value="70" oninput="bgnUpdFx()">
+        <span class="sz-val" id="bgn-fxIntV">70</span>
+      </div>
+      <div class="compass-wrap" id="bgn-fxDirWrap" style="display:none">
+        <span class="compass-lbl">Shadow direction</span>
+        <div class="compass" id="bgn-compass"></div>
+      </div>
+
+      <div class="sec">Content</div>
+      <div class="fld">
+        <label>Font sizes for banner</label>
+        <select id="bgn-btype" onchange="bgnSwitchType(this.value)">
+          <option value="desktop">Desktop (1600 × 500px)</option>
+          <option value="mobile">Mobile (760 × 1380px)</option>
+          <option value="category">Category (600 × 720px)</option>
+        </select>
+      </div>
+      <p class="type-note">Edit a size and press Enter to apply · each banner type is independent</p>
+
+      <div class="fld">
+        <div class="fld-lrow"><label>Headline (script font)</label><input type="number" class="px-box" id="bgn-sz-hl" value="54" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-hl" value="Refresh Your Space" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <div class="fld-lrow"><label>Subline</label><input type="number" class="px-box" id="bgn-sz-sl" value="14" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-sl" value="For Less" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <div class="fld-lrow"><label>Discount</label><input type="number" class="px-box" id="bgn-sz-dv" value="68" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-dv" value="50% OFF" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <div class="fld-lrow"><label>Use code label</label><input type="number" class="px-box" id="bgn-sz-ul" value="12" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-ul" value="USE CODE" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <div class="fld-lrow"><label>Promo code</label><input type="number" class="px-box" id="bgn-sz-pc" value="40" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-pc" value="VMS22" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <div class="fld-lrow"><label>End date</label><input type="number" class="px-box" id="bgn-sz-ed" value="16" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-ed" value="Ends 31 March" oninput="bgnUpd()">
+      </div>
+      <div class="fld">
+        <div class="fld-lrow"><label>CTA label</label><input type="number" class="px-box" id="bgn-sz-cl" value="14" min="8" max="200" onkeydown="if(event.key==='Enter'){bgnApplySz();this.blur();}"></div>
+        <input type="text" id="bgn-cl" value="Shop Now" oninput="bgnUpd()">
+      </div>
+
+      <div class="sec">AI Photo Generator <span class="ai-badge">Nano Banana</span></div>
+      <div class="fld">
+        <label>Google AI Studio API key &nbsp;<a href="https://aistudio.google.com/apikey" target="_blank">get a free key ↗</a></label>
+        <div class="key-row">
+          <input type="password" id="bgn-apiKey" placeholder="Paste your API key" oninput="bgnS.apiKey=this.value.trim();bgnUpdKeyDot()">
+          <div class="key-dot" id="bgn-kdot"></div>
+        </div>
+      </div>
+      <div class="ai-model">Model <span id="activeModel">nano-banana-pro-preview</span></div>
+      <div class="fld">
+        <label>Scene / room style</label>
+        <select id="bgn-aiStyle">
+          <option value="herringbone oak wood flooring bright spacious living room luxury interior design warm natural light">Herringbone oak — living room</option>
+          <option value="light engineered oak wood flooring modern Scandinavian kitchen white cabinets bright natural daylight">Light oak — kitchen</option>
+          <option value="dark walnut hardwood flooring contemporary open plan living dining space warm interior">Dark walnut — open plan</option>
+          <option value="luxury vinyl plank flooring minimalist serene bedroom soft natural light neutral palette">LVP — bedroom</option>
+          <option value="herringbone parquet oak flooring elegant entrance hallway bright architectural details">Herringbone — hallway</option>
+          <option value="chevron wood flooring sophisticated dining room elegant furniture warm ambient light">Chevron — dining room</option>
+          <option value="wide plank rustic oak flooring cozy cottage interior warm tones exposed beams">Rustic wide plank</option>
+          <option value="light grey luxury vinyl flooring sleek minimalist contemporary living space clean lines">Grey vinyl — modern</option>
+          <option value="natural light oak flooring bright airy conservatory indoor plants Scandinavian style">Light floor — conservatory</option>
+          <option value="rich dark hardwood flooring traditional British interior warm ambient light classic furniture">Classic dark hardwood</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Custom prompt (optional)</label>
+        <input type="text" id="bgn-aiCustom" placeholder="e.g. modern loft with chevron oak flooring…">
+      </div>
+      <div class="ai-grid">
+        <button class="ai-btn" id="bgn-ab1" onclick="bgnGenImg(1)">✦ Generate photo 1</button>
+        <button class="ai-btn" id="bgn-ab2" onclick="bgnGenImg(2)">✦ Generate photo 2</button>
+      </div>
+      <p class="ai-note">AI generates a lifestyle image · ~5–10 sec · or upload manually below</p>
+
+      <div class="sec">Photos (manual upload)</div>
+      <div class="fld">
+        <label>Photo 1 — left desktop · bottom mobile + category</label>
+        <div class="upl" id="bgn-u1">
+          <input type="file" accept="image/*" onchange="bgnLoadPh(event,1)">
+          <div class="upl-h"><b>+ Upload photo 1</b>Click or drag</div>
+          <img class="th" id="bgn-t1">
+          <div class="upl-load"><div class="spinner"></div><p>Generating with Nano Banana…</p></div>
+          <button class="clr" onclick="bgnClrPh(event,1)">✕</button>
+          <span class="ai-tag">Nano Banana</span>
+        </div>
+      </div>
+      <div class="fld">
+        <label>Photo 2 — right side desktop only</label>
+        <div class="upl" id="bgn-u2">
+          <input type="file" accept="image/*" onchange="bgnLoadPh(event,2)">
+          <div class="upl-h"><b>+ Upload photo 2</b>Click or drag</div>
+          <img class="th" id="bgn-t2">
+          <div class="upl-load"><div class="spinner"></div><p>Generating with Nano Banana…</p></div>
+          <button class="clr" onclick="bgnClrPh(event,2)">✕</button>
+          <span class="ai-tag">Nano Banana</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="fp-ft">
+      <button class="dl" onclick="bgnDlAll()">↓ Download all banners (ZIP)</button>
+    </div>
+  </div>
+
+  <!-- ── Preview panel ───────────────────────────────────────────────── -->
+  <div class="pp">
+    <div class="pl">Desktop <em>1600 × 500px · JPG</em></div>
+    <div class="pw"><img id="bgn-pD" alt="Desktop preview"></div>
+    <div class="pr">
+      <div>
+        <div class="pl">Mobile <em>760 × 1380px</em></div>
+        <div class="pw"><img id="bgn-pM" alt="Mobile preview"></div>
+      </div>
+      <div>
+        <div class="pl">Category <em>600 × 720px</em></div>
+        <div class="pw"><img id="bgn-pC" alt="Category preview"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<script>
+(function() {
+  'use strict';
+  var GOLD='#D4AF37';
+  var PRESETS=['#6B2D2D','#1A2340','#1E3A2A','#3D3530','#5C2A6B','#6B4220','#8B4513','#2C4A6E'];
+  // Per-banner-type font size defaults
+  var FONT_DEFS = {
+    desktop:  { hl:54,  sl:14, dv:68, ul:12, pc:40, ed:16, cl:14 },
+    mobile:   { hl:72,  sl:18, dv:96, ul:16, pc:54, ed:20, cl:18 },
+    category: { hl:40,  sl:10, dv:52, ul:10, pc:30, ed:13, cl:12 }
+  };
+  var bgnSz = {
+    desktop:  { hl:54,  sl:14, dv:68, ul:12, pc:40, ed:16, cl:14 },
+    mobile:   { hl:72,  sl:18, dv:96, ul:16, pc:54, ed:20, cl:18 },
+    category: { hl:40,  sl:10, dv:52, ul:10, pc:30, ed:13, cl:12 }
+  };
+  var bgnCurrentType = 'desktop';
+  var DIRS=[{l:'↖',a:225},{l:'↑',a:270},{l:'↗',a:315},{l:'←',a:180},{l:'·',a:-1},{l:'→',a:0},{l:'↙',a:135},{l:'↓',a:90},{l:'↘',a:45}];
+
+  var bgnS={site:'wnb',col:'#6B2D2D',hl:'Refresh Your Space',sl:'For Less',dv:'50% OFF',ul:'USE CODE',pc:'VMS22',ed:'Ends 31 March',cl:'Shop Now',cn:'campaign',p1:null,p2:null,apiKey:'',fx:{type:'none',intensity:70,angle:90}};
+  window.bgnS=bgnS;
+
+  function bgnInit(){
+    var c=document.getElementById('bgn-sw');
+    PRESETS.forEach(function(col){
+      var d=document.createElement('div');
+      d.className='sw'+(col===bgnS.col?' on':'');
+      d.style.background=col;d.title=col;
+      d.onclick=function(){bgnSetCol(col,false,d);};
+      c.appendChild(d);
+    });
+    bgnUpdColorUI();
+    var compass=document.getElementById('bgn-compass');
+    DIRS.forEach(function(dir){
+      var b=document.createElement('button');
+      b.className='drbtn'+(dir.a===-1?' mid':'')+(dir.a===bgnS.fx.angle?' on':'');
+      b.textContent=dir.l;b.title=dir.a>=0?dir.a+'°':'';
+      if(dir.a>=0)b.onclick=function(){bgnS.fx.angle=dir.a;document.querySelectorAll('.drbtn:not(.mid)').forEach(function(x){x.classList.remove('on');});b.classList.add('on');bgnRender();};
+      compass.appendChild(b);
+    });
+    document.fonts.ready.then(function(){bgnRender();});
+    bgnRender();
+  }
+
+  window.bgnSetCol=function(v,fp,el){
+    bgnS.col=v;
+    if(!fp){document.getElementById('bgn-cpinp').value=v;document.querySelectorAll('.sw').forEach(function(x){x.classList.remove('on');});if(el)el.classList.add('on');}
+    else document.querySelectorAll('.sw').forEach(function(x){x.classList.remove('on');});
+    bgnUpdColorUI();bgnRender();
+  };
+  function bgnUpdColorUI(){document.getElementById('bgn-cdot').style.background=bgnS.col;document.getElementById('bgn-chex').textContent=bgnS.col;document.getElementById('bgn-cpinp').value=bgnS.col;}
+  window.bgnSetSite=function(s,b){bgnS.site=s;document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});b.classList.add('on');bgnRender();};
+  window.bgnUpd=function(){
+    bgnS.cn=document.getElementById('bgn-cn').value||'campaign';
+    bgnS.hl=document.getElementById('bgn-hl').value;
+    bgnS.sl=document.getElementById('bgn-sl').value;
+    bgnS.dv=document.getElementById('bgn-dv').value;
+    bgnS.ul=document.getElementById('bgn-ul').value||'USE CODE';
+    bgnS.pc=document.getElementById('bgn-pc').value;
+    bgnS.ed=document.getElementById('bgn-ed').value;
+    bgnS.cl=document.getElementById('bgn-cl').value;
+    bgnRender();
+  };
+window.bgnSwitchType=function(type){
+    bgnCurrentType=type;
+    var sz=bgnSz[type];
+    ['hl','sl','dv','ul','pc','ed','cl'].forEach(function(f){
+      var el=document.getElementById('bgn-sz-'+f);
+      if(el) el.value=sz[f];
+    });
+  };
+  window.bgnApplySz=function(){
+    var defs=FONT_DEFS[bgnCurrentType];
+    var sz=bgnSz[bgnCurrentType];
+    ['hl','sl','dv','ul','pc','ed','cl'].forEach(function(f){
+      var el=document.getElementById('bgn-sz-'+f);
+      if(el){ var v=parseInt(el.value)||defs[f]; sz[f]=Math.max(8,Math.min(200,v)); el.value=sz[f]; }
+    });
+    bgnRender();
+  };
+  window.bgnSetFx=function(type,btn){bgnS.fx.type=type;document.querySelectorAll('.fx-pill').forEach(function(x){x.classList.remove('on');});btn.classList.add('on');document.getElementById('bgn-fxIntRow').style.display=type==='none'?'none':'flex';document.getElementById('bgn-fxDirWrap').style.display=type==='lift'?'block':'none';bgnRender();};
+  window.bgnUpdFx=function(){bgnS.fx.intensity=+document.getElementById('bgn-fxInt').value;document.getElementById('bgn-fxIntV').textContent=bgnS.fx.intensity;bgnRender();};
+  window.bgnUpdKeyDot=function(){document.getElementById('bgn-kdot').className='key-dot'+(bgnS.apiKey.length>10?' ok':'');};
+  window.bgnLoadPh=function(e,n){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){var img=new Image();img.onload=function(){bgnS['p'+n]=img;var z=document.getElementById('bgn-u'+n);z.classList.add('has');z.classList.remove('ai-gen');document.getElementById('bgn-t'+n).src=ev.target.result;bgnRender();};img.src=ev.target.result;};r.readAsDataURL(f);};
+  window.bgnClrPh=function(e,n){e.stopPropagation();bgnS['p'+n]=null;var z=document.getElementById('bgn-u'+n);z.classList.remove('has','ai-gen');document.getElementById('bgn-t'+n).src='';bgnRender();};
+
+  window.bgnGenImg=function(slot){
+    if(!bgnS.apiKey){alert('Paste your Google AI Studio API key first.');return;}
+    var custom=document.getElementById('bgn-aiCustom').value.trim();
+    var style=document.getElementById('bgn-aiStyle').value;
+    var prompt=(custom||style)+', professional interior photography, high resolution, bright airy, editorial magazine style, no people, no text, no watermarks';
+    var zone=document.getElementById('bgn-u'+slot),btn=document.getElementById('bgn-ab'+slot);
+    btn.disabled=true;zone.classList.add('loading');zone.classList.remove('has','ai-gen');
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/'+(window._activeModel||'nano-banana-pro-preview')+':generateContent?key='+bgnS.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE']}})})
+    .then(function(res){if(!res.ok)return res.text().then(function(t){var e={};try{e=JSON.parse(t);}catch(x){}var m=(e&&e.error&&e.error.message)||('HTTP '+res.status);throw new Error(m);});return res.json();})
+    .then(function(data){var parts=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts)||[];var imgPart=parts.find(function(p){return p.inlineData;});if(!imgPart||!imgPart.inlineData||!imgPart.inlineData.data){console.error('No image in response:',JSON.stringify(data).slice(0,300));throw new Error('No image returned — Gemini may have refused the prompt, try a different style');}var mime=imgPart.inlineData.mimeType||'image/jpeg';var imgSrc='data:'+mime+';base64,'+imgPart.inlineData.data;var img=new Image();img.onload=function(){bgnS['p'+slot]=img;zone.classList.remove('loading');zone.classList.add('has','ai-gen');document.getElementById('bgn-t'+slot).src=imgSrc;document.getElementById('bgn-kdot').className='key-dot ok';bgnRender();};img.onerror=function(){throw new Error('Image load failed');};img.src=imgSrc;})
+    .catch(function(err){console.error('Gemini error:',err);zone.classList.remove('loading');document.getElementById('bgn-kdot').className='key-dot err';var p=zone.querySelector('.upl-load p');if(p){p.style.animation='none';p.textContent=err.message;setTimeout(function(){p.textContent='Generating with Nano Banana…';p.style.animation='';},5000);}})
+    .finally(function(){btn.disabled=false;});
+  };
+
+  function bgnClrShadow(ctx){ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;}
+  function bgnHexToRgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
+  function bgnGlowCol(hex,lift){var rgb=bgnHexToRgb(hex);return'rgb('+Math.min(255,rgb[0]+lift)+','+Math.min(255,rgb[1]+lift)+','+Math.min(255,rgb[2]+lift)+')';}
+
+  function bgnDrawPhoto(ctx,img,x,y,w,h){if(!img){ctx.fillStyle='#ddd8d0';ctx.fillRect(x,y,w,h);ctx.fillStyle='rgba(0,0,0,0.12)';ctx.font='400 '+Math.min(14,w/16)+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Photo',x+w/2,y+h/2);return;}var ar=img.width/img.height,br=w/h;var sw,sh,sx,sy;if(ar>br){sh=h;sw=h*ar;sy=y;sx=x-(sw-w)/2;}else{sw=w;sh=w/ar;sx=x;sy=y-(sh-h)/2;}ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(img,sx,sy,sw,sh);ctx.restore();}
+  function bgnRoundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
+  function bgnWrapText(ctx,txt,mw){if(!txt)return[''];var words=txt.split(' '),lines=[],line='';for(var i=0;i<words.length;i++){var test=line?line+' '+words[i]:words[i];if(ctx.measureText(test).width>mw&&line){lines.push(line);line=words[i];}else line=test;}if(line)lines.push(line);return lines.length?lines:[''];}
+  function bgnGetCfg(type){
+    var sz=bgnSz[type];
+    var ctaH=Math.max(28,Math.round(sz.cl*3.2));
+    var ctaW=Math.max(120,Math.round(sz.cl*14));
+    return{hS:sz.hl,sS:sz.sl,dS:sz.dv,cLS:sz.ul,cS:sz.pc,dtS:sz.ed,ctaS:sz.cl,ctaW:ctaW,ctaH:ctaH};
+  }
+
+  function bgnDrawPanelBg(ctx,px,py,pw,ph){
+    var it=bgnS.fx.intensity/100,ss=ph/500,t=bgnS.fx.type;
+    if(t==='none'){ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);}
+    else if(t==='float'){ctx.shadowColor='rgba(0,0,0,'+(0.48*it)+')';ctx.shadowBlur=55*ss*it;ctx.shadowOffsetX=0;ctx.shadowOffsetY=22*ss*it;ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);bgnClrShadow(ctx);}
+    else if(t==='lift'){var ang=bgnS.fx.angle*Math.PI/180,dist=28*ss*it;ctx.shadowColor='rgba(0,0,0,'+(0.55*it)+')';ctx.shadowBlur=22*ss*it;ctx.shadowOffsetX=Math.cos(ang)*dist;ctx.shadowOffsetY=Math.sin(ang)*dist;ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);bgnClrShadow(ctx);}
+    else if(t==='glow'){ctx.shadowColor=bgnGlowCol(bgnS.col,60);ctx.shadowBlur=70*ss*it;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);bgnClrShadow(ctx);ctx.shadowColor=bgnGlowCol(bgnS.col,90);ctx.shadowBlur=35*ss*it;ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);bgnClrShadow(ctx);}
+    else if(t==='soft3d'){ctx.shadowColor='rgba(0,0,0,'+(0.38*it)+')';ctx.shadowBlur=22*ss*it;ctx.shadowOffsetX=14*ss*it;ctx.shadowOffsetY=14*ss*it;ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);bgnClrShadow(ctx);ctx.shadowColor='rgba(255,255,255,'+(0.22*it)+')';ctx.shadowBlur=22*ss*it;ctx.shadowOffsetX=-14*ss*it;ctx.shadowOffsetY=-14*ss*it;ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);bgnClrShadow(ctx);}
+    else if(t==='inset'){ctx.fillStyle=bgnS.col;ctx.fillRect(px,py,pw,ph);}
+  }
+
+  function bgnDrawPanel(ctx,px,py,pw,ph,cfg){
+    var hS=cfg.hS,sS=cfg.sS,dS=cfg.dS,cLS=cfg.cLS,cS=cfg.cS,dtS=cfg.dtS,ctaS=cfg.ctaS,ctaW=cfg.ctaW,ctaH=cfg.ctaH;
+    var cx=px+pw/2,pad=pw*.11;
+    ctx.save();
+    bgnDrawPanelBg(ctx,px,py,pw,ph);
+    ctx.beginPath();ctx.rect(px,py,pw,ph);ctx.clip();
+    var g=ctx.createLinearGradient(px,py,px,py+ph);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.22)');ctx.fillStyle=g;ctx.fillRect(px,py,pw,ph);
+    if(bgnS.fx.type==='inset'){var it=bgnS.fx.intensity/100,ss=ph/500,lw=Math.max(2,6*ss*it);ctx.strokeStyle='rgba(255,255,255,'+(0.38*it)+')';ctx.lineWidth=lw;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(px,py+ph);ctx.lineTo(px,py);ctx.lineTo(px+pw,py);ctx.stroke();ctx.strokeStyle='rgba(0,0,0,'+(0.45*it)+')';ctx.beginPath();ctx.moveTo(px+pw,py);ctx.lineTo(px+pw,py+ph);ctx.lineTo(px,py+ph);ctx.stroke();var di=ctx.createLinearGradient(px,py,px,py+ph*0.35);di.addColorStop(0,'rgba(0,0,0,'+(0.18*it)+')');di.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=di;ctx.fillRect(px,py,pw,ph*0.35);}
+    var bl=pw*.07,bp=ph*.033;ctx.strokeStyle='rgba(255,255,255,0.16)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+bl,py+bp);ctx.lineTo(px+pw-bl,py+bp);ctx.stroke();ctx.beginPath();ctx.moveTo(px+bl,py+ph-bp);ctx.lineTo(px+pw-bl,py+ph-bp);ctx.stroke();
+    ctx.font='700 '+hS+'px \'Dancing Script\',\'Georgia\',serif';
+    var hLines=bgnWrapText(ctx,bgnS.hl,pw-pad*2);var hLH=hS*1.15,hH=hLines.length*hLH;
+    var tot=hH+10+1+12+sS+22+dS+16+cLS+8+cS+14+dtS+22+ctaH;var tp=Math.max(pw*.035,(ph-tot)/2);var cy=py+tp;
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillStyle='rgba(255,255,255,0.96)';hLines.forEach(function(l,i){ctx.fillText(l,cx,cy+i*hLH);});cy+=hH+10;
+    var rw=pw*.46;ctx.strokeStyle='rgba(255,255,255,0.24)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx-rw/2,cy);ctx.lineTo(cx+rw/2,cy);ctx.stroke();cy+=1+12;
+    ctx.font='600 '+sS+'px \'Montserrat\',system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.58)';ctx.fillText(bgnS.sl.toUpperCase(),cx,cy);cy+=sS+22;
+    ctx.font='700 '+dS+'px \'Montserrat\',system-ui,sans-serif';ctx.fillStyle='#fff';ctx.fillText(bgnS.dv,cx,cy);cy+=dS+16;
+    ctx.font='400 '+cLS+'px \'Montserrat\',system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.44)';ctx.fillText(bgnS.ul||'USE CODE',cx,cy);cy+=cLS+8;
+    ctx.font='700 '+cS+'px \'Montserrat\',system-ui,sans-serif';ctx.fillStyle=GOLD;ctx.fillText(bgnS.pc,cx,cy);cy+=cS+14;
+    ctx.font='300 italic '+dtS+'px \'Montserrat\',system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.58)';ctx.fillText(bgnS.ed,cx,cy);cy+=dtS+22;
+    ctx.fillStyle='rgba(255,255,255,0.93)';bgnRoundRect(ctx,cx-ctaW/2,cy,ctaW,ctaH,Math.round(ctaH*.1));
+    ctx.fillStyle=bgnS.col;ctx.font='600 '+ctaS+'px \'Montserrat\',system-ui,sans-serif';ctx.textBaseline='middle';ctx.fillText(bgnS.cl+' →',cx,cy+ctaH/2);
+    ctx.restore();
+  }
+
+  function bgnDrawBanner(type){
+    var c=document.createElement('canvas'),ctx=c.getContext('2d');
+    if(type==='desktop'){c.width=1600;c.height=500;var col=Math.floor(1600/3);bgnDrawPhoto(ctx,bgnS.p1,0,0,col,500);bgnDrawPhoto(ctx,bgnS.p2,col*2+2,0,1600-col*2-2,500);bgnDrawPanel(ctx,col,0,col+2,500,bgnGetCfg('desktop'));}
+    else if(type==='mobile'){c.width=760;c.height=1380;bgnDrawPhoto(ctx,bgnS.p1,0,690,760,690);bgnDrawPanel(ctx,0,0,760,690,bgnGetCfg('mobile'));}
+    else{c.width=600;c.height=720;bgnDrawPhoto(ctx,bgnS.p1,0,360,600,360);bgnDrawPanel(ctx,0,0,600,360,bgnGetCfg('category'));}
+    return c;
+  }
+
+  var bgnRt=null;
+  function bgnRender(){clearTimeout(bgnRt);bgnRt=setTimeout(function(){try{document.getElementById('bgn-pD').src=bgnDrawBanner('desktop').toDataURL('image/jpeg',.92);document.getElementById('bgn-pM').src=bgnDrawBanner('mobile').toDataURL('image/jpeg',.92);document.getElementById('bgn-pC').src=bgnDrawBanner('category').toDataURL('image/jpeg',.92);}catch(e){console.error('BGN render error:',e);}},55);}
+  window.bgnRender=bgnRender;
+
+  window.bgnDlAll=function(){
+    var Z=window.JSZip;if(!Z){alert('JSZip loading, please retry.');return;}
+    var zip=new Z(),n=bgnS.cn||'campaign';
+    var sites=bgnS.site==='both'?['wnb','vfd']:[bgnS.site];
+    sites.forEach(function(s){['desktop','mobile','category'].forEach(function(t){var b64=bgnDrawBanner(t).toDataURL('image/jpeg',.92).split(',')[1];zip.file(s+'_'+n+'_'+t+'.jpg',b64,{base64:true});});});
+    zip.generateAsync({type:'blob'}).then(function(blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='banners_'+n+'.zip';a.click();URL.revokeObjectURL(a.href);});
+  };
+
+
+  // List available models to find which image-capable ones the key can access
+  window.listModels = async function() {
+    if(!bgnS.apiKey){alert('Paste your API key first.');return;}
+    const btn = document.getElementById('listBtn');
+    btn.textContent = '⏳ Checking…'; btn.disabled = true;
+    try {
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+bgnS.apiKey);
+      const data = await res.json();
+      if(!res.ok) throw new Error(data?.error?.message || 'HTTP '+res.status);
+      const models = (data.models || []).map(m => m.name.replace('models/',''));
+      const imgModels = models.filter(m => m.includes('flash') || m.includes('imagen') || m.includes('image'));
+      alert('Image-capable models on your key:\n\n' + imgModels.join('\n') + '\n\nAll models: ' + models.length + ' total\nCheck browser console for full list');
+      console.log('All available models:', models);
+      console.log('Likely image models:', imgModels);
+      // Auto-pick best model
+      const candidates = ['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-2.0-flash-preview-image-generation'];
+      for(const c of candidates){
+        if(models.includes(c)){
+          document.getElementById('activeModel').textContent = c;
+          window._activeModel = c;
+          console.log('Auto-selected model:', c);
+          break;
+        }
+      }
+    } catch(e) {
+      alert('Error: '+e.message);
+      console.error(e);
+    } finally {
+      btn.textContent = '📋 Check which models I have access to'; btn.disabled = false;
+    }
+  };
+  bgnInit();
+})();
+</script>
+</body>
+</html>
